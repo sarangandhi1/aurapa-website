@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTL Affordability Calculator | Max Loan at 125% and 145% ICR</title>
+<meta name="description" content="Work out the maximum buy to let mortgage the rental stress test supports at 125% and 145% ICR, and whether rent or loan to value is the binding constraint.">
+<link rel="canonical" href="https://aurapa.co.uk/calculators/btl-affordability/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="BTL Affordability Calculator | Max Loan at 125% and 145% ICR">
+<meta property="og:description" content="Work out the maximum buy to let mortgage the rental stress test supports at 125% and 145% ICR, and whether rent or loan to value is the binding constraint.">
+<meta property="og:url" content="https://aurapa.co.uk/calculators/btl-affordability/">
+<meta property="og:image" content="https://aurapa.co.uk/assets/og.png">
+<meta property="og:site_name" content="Aurapa">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=20260802f">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FinancialService", "@id": "https://aurapa.co.uk/#organisation", "name": "Aurapa Ltd", "url": "https://aurapa.co.uk", "telephone": "+447878781100", "email": "s.gandhi@cfnuk.com", "description": "Commercial finance brokerage arranging buy to let mortgages, bridging loans, HMO mortgages and mortgages for self employed applicants across England.", "address": {"@type": "PostalAddress", "addressLocality": "Coventry", "addressRegion": "West Midlands", "addressCountry": "GB"}, "areaServed": [{"@type": "AdministrativeArea", "name": "West Midlands"}, {"@type": "Country", "name": "England"}], "founder": {"@id": "https://aurapa.co.uk/#saran"}, "memberOf": {"@type": "Organization", "name": "Commercial Finance Network Corporation Ltd", "url": "https://commercialfinancenetwork.co.uk/"}, "sameAs": ["https://linkedin.com/company/aurapa"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Person", "@id": "https://aurapa.co.uk/#saran", "name": "Saran Gandhi", "jobTitle": "Founder", "worksFor": {"@id": "https://aurapa.co.uk/#organisation"}, "description": "Founder of Aurapa Ltd. Former Indian Army colonel and former senior manager at Amazon EU, now a commercial finance broker in Coventry.", "knowsAbout": ["buy to let mortgages", "bridging finance", "HMO mortgages", "self employed mortgages", "limited company buy to let"]}</script>
+</head>
+<body>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Aurapa<small>Property Finance</small></a>
+<nav><a href="/">Home</a><a href="/guides/">Guides</a><a href="/calculators/">Calculators</a><a href="/about/">About</a><a href="/contact/">Contact</a><a class="nav-cta" href="tel:+447878781100">Call 07878 781100</a></nav>
+</div>
+</header>
+<main>
+<script>
+// Lead capture endpoint: Apps Script Web App on the leads Sheet (doPost).
+// Live since 2 Aug 2026. Leads append to Sheet2 so the existing alert,
+// calendar and WhatsApp automation fires exactly as it does for Meta leads.
+var WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzSZB_NApHuD-2w6cl-9SkDhbpC9p1Fp9ldENm2XosCY2XLu-uXBV9zKTDGCJRnTRSsVQ/exec";
+
+function submitLead(calcId) {
+  var name = document.getElementById('lf-name').value.trim();
+  var phone = document.getElementById('lf-phone').value.trim();
+  var email = document.getElementById('lf-email').value.trim();
+  var status = document.getElementById('lf-status');
+  if (name === '' || phone === '') {
+    status.textContent = 'A name and phone number are needed so we can call you back.';
+    return;
+  }
+  var payload = {
+    source: 'calculator',
+    calculator: calcId,
+    name: name,
+    phone: phone,
+    email: email,
+    inputs: window.lastInputs || {},
+    results: window.lastResults || {},
+    page: location.href,
+    submitted_at: new Date().toISOString()
+  };
+  status.textContent = 'Sending…';
+  fetch(WEBHOOK_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }).then(function (r) {
+    status.textContent = r.ok
+      ? 'Thanks. One of our team will call you back, usually the same working day.'
+      : 'That did not send. Please call us on 07878 781100 instead.';
+  }).catch(function () {
+    status.textContent = 'That did not send. Please call us on 07878 781100 instead.';
+  });
+}
+
+function fmtGBP(n) {
+  return '£' + Math.round(n).toLocaleString('en-GB');
+}
+
+// Standard annuity payment: capital and interest over the full term.
+function annuity(p, annualPct, years) {
+  var r = (annualPct / 100) / 12;
+  var n = Math.round(years * 12);
+  if (r === 0) return n > 0 ? p / n : 0;
+  return p * r / (1 - Math.pow(1 + r, -n));
+}
+</script><section class="page-hero"><div class="wrap">
+<p class="crumb">Free calculator</p><h1>Buy to let affordability calculator</h1>
+<p class="lead">Enter the rent, the property value and a product rate. The calculator shows the maximum loan a lender's rental stress test supports at 125% and 145% interest cover, and which constraint actually limits your borrowing.</p>
+</div></section><div class="wrap"><div class="prose">
+
+<div class="calc">
+<label for="rent">Expected monthly rent (£)</label>
+<input type="number" id="rent" value="1200" min="0">
+<label for="value">Property value (£)</label>
+<input type="number" id="value" value="250000" min="0">
+<label for="rate">Product rate (% a year)</label>
+<input type="number" id="rate" value="4.5" step="0.05" min="0">
+<label for="band">Your income tax band</label>
+<select id="band">
+<option value="basic">Basic rate, or buying in a limited company</option>
+<option value="higher">Higher or additional rate, personal name</option>
+</select>
+<button type="button" onclick="calcBTL()">Calculate</button>
+</div>
+
+<div class="result hidden" id="result"></div>
+
+<div class="leadform hidden" id="leadform">
+<h3>Want these numbers checked by a broker</h3>
+<p>Leave your details and one of our team will look at your figures against live lender criteria and call you back. No charge, no obligation.</p>
+<input type="text" id="lf-name" placeholder="Name" autocomplete="name">
+<input type="tel" id="lf-phone" placeholder="Phone" autocomplete="tel">
+<input type="email" id="lf-email" placeholder="Email" autocomplete="email">
+<button type="button" onclick="submitLead('btl-affordability')">Ask us to check these numbers</button>
+<p id="lf-status"></p>
+</div>
+
+<p class="disclaimer">Figures are illustrative only. They are not advice, not a quote and not an offer of finance. Lender criteria vary and change.</p>
+
+<h2>How the calculation works</h2>
+<p>Lenders test that the rent covers the mortgage interest with a margin. The margin is the interest coverage ratio, or ICR: typically 125% for basic rate taxpayers and limited companies, 145% for higher rate taxpayers borrowing in a personal name. The interest is calculated at a stress rate, not always the pay rate. On fixes shorter than five years lenders typically use the higher of the pay rate plus 2% and a floor around 5.5%. On five year fixes many use the pay rate itself. This calculator stresses at the higher of your entered rate and 5.5%, which is a reasonable midpoint. Alongside the rental test, the loan is capped at 75% of the property value with most lenders. Whichever cap is lower is your real limit. The full explanation with worked examples is in our guide to <a href="/guides/btl-stress-test-icr/">how lenders stress test buy to let affordability</a>.</p>
+
+<script>
+function calcBTL() {
+  var rent = parseFloat(document.getElementById('rent').value) || 0;
+  var value = parseFloat(document.getElementById('value').value) || 0;
+  var rate = parseFloat(document.getElementById('rate').value) || 0;
+  var band = document.getElementById('band').value;
+
+  var stress = Math.max(rate, 5.5) / 100;
+  var annualRent = rent * 12;
+  var max125 = annualRent / (stress * 1.25);
+  var max145 = annualRent / (stress * 1.45);
+  var ltvCap = value * 0.75;
+
+  var yourICR = (band === 'basic') ? 1.25 : 1.45;
+  var yourIcrMax = (band === 'basic') ? max125 : max145;
+  var yourMax = Math.min(yourIcrMax, ltvCap);
+  var binding = (yourIcrMax < ltvCap)
+    ? 'the rental stress test. The rent runs out before the 75% loan to value cap does. A higher rent, a lower rate product or a five year fix tested at the pay rate would raise the limit.'
+    : 'the 75% loan to value cap. The rent would support more borrowing, but lenders will not normally go past 75% of the value. A bigger deposit or a lender offering 80% would raise the limit.';
+
+  window.lastInputs = { rent: rent, value: value, rate: rate, band: band };
+  window.lastResults = { stress_rate: stress * 100, max_at_125: Math.round(max125), max_at_145: Math.round(max145), ltv_cap: Math.round(ltvCap), your_max: Math.round(yourMax) };
+
+  var html = '<h2>Results</h2>'
+    + '<table>'
+    + '<tr><th>Constraint</th><th>Maximum loan</th></tr>'
+    + '<tr><td>Rental test at 125% ICR, ' + (stress * 100).toFixed(2) + '% stress</td><td>' + fmtGBP(max125) + '</td></tr>'
+    + '<tr><td>Rental test at 145% ICR, ' + (stress * 100).toFixed(2) + '% stress</td><td>' + fmtGBP(max145) + '</td></tr>'
+    + '<tr><td>75% loan to value cap</td><td>' + fmtGBP(ltvCap) + '</td></tr>'
+    + '</table>'
+    + '<p><strong>Your likely maximum loan: ' + fmtGBP(yourMax) + '</strong> (at ' + (yourICR * 100) + '% ICR for your band).</p>'
+    + '<p>The binding constraint is ' + binding + '</p>';
+
+  document.getElementById('result').innerHTML = html;
+  document.getElementById('result').classList.remove('hidden');
+  document.getElementById('leadform').classList.remove('hidden');
+}
+</script>
+</div></div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<div class="footer-grid">
+<div>
+<p class="fbrand">Aurapa</p>
+<p>Property finance for cases that do not fit the high street. Buy to let, bridging, HMO and self employed mortgages, arranged through a panel of over 100 lenders.</p>
+<p>Proud member of the Commercial Finance Network.</p>
+</div>
+<div>
+<h4>Popular guides</h4>
+<ul>
+<li><a href="/guides/ltd-company-btl/">Limited company BTL</a></li>
+<li><a href="/guides/btl-stress-test-icr/">The BTL stress test</a></li>
+<li><a href="/guides/bridging-loan-cost/">Bridging loan costs</a></li>
+<li><a href="/guides/self-employed-mortgage-one-year/">Self employed mortgages</a></li>
+<li><a href="/guides/">All 18 guides</a></li>
+</ul>
+</div>
+<div>
+<h4>Tools</h4>
+<ul>
+<li><a href="/calculators/mortgage-repayment/">Mortgage repayment calculator</a></li>
+<li><a href="/calculators/remortgage/">Remortgage calculator</a></li>
+<li><a href="/calculators/btl-affordability/">BTL affordability calculator</a></li>
+<li><a href="/calculators/bridging-cost/">Bridging cost calculator</a></li>
+<li><a href="/about/">About us</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/privacy/">Privacy</a></li>
+</ul>
+</div>
+<div>
+<h4>Talk to us</h4>
+<ul>
+<li><strong style="color:#fff">Aurapa Ltd</strong></li>
+<li>Coventry, West Midlands</li>
+<li><a href="tel:+447878781100">07878 781100</a></li>
+<li><a href="mailto:s.gandhi@cfnuk.com">s.gandhi@cfnuk.com</a></li>
+<li><a href="https://wa.me/447802649241">WhatsApp us</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<p class="fca">Aurapa Ltd is an Appointed Representative of Commercial Finance Network Corporation Ltd, which is authorised and regulated by the Financial Conduct Authority, FCA number 796413.</p>
+<p class="fca">Information on this site is for general guidance. It is not advice and not an offer of finance. Your property may be repossessed if you do not keep up repayments on a mortgage.</p>
+<p class="fca">&copy; 2026 Aurapa Ltd. All rights reserved.</p>
+</div>
+</div>
+</footer>
+</body>
+</html>

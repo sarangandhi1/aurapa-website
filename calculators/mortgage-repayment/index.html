@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mortgage Repayment Calculator | Monthly Payment and Total Interest</title>
+<meta name="description" content="Work out the monthly payment on a repayment or interest only mortgage, the total interest over the term, your loan to value, and what the payment becomes if rates rise.">
+<link rel="canonical" href="https://aurapa.co.uk/calculators/mortgage-repayment/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mortgage Repayment Calculator | Monthly Payment and Total Interest">
+<meta property="og:description" content="Work out the monthly payment on a repayment or interest only mortgage, the total interest over the term, your loan to value, and what the payment becomes if rates rise.">
+<meta property="og:url" content="https://aurapa.co.uk/calculators/mortgage-repayment/">
+<meta property="og:image" content="https://aurapa.co.uk/assets/og.png">
+<meta property="og:site_name" content="Aurapa">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css?v=20260802f">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FinancialService", "@id": "https://aurapa.co.uk/#organisation", "name": "Aurapa Ltd", "url": "https://aurapa.co.uk", "telephone": "+447878781100", "email": "s.gandhi@cfnuk.com", "description": "Commercial finance brokerage arranging buy to let mortgages, bridging loans, HMO mortgages and mortgages for self employed applicants across England.", "address": {"@type": "PostalAddress", "addressLocality": "Coventry", "addressRegion": "West Midlands", "addressCountry": "GB"}, "areaServed": [{"@type": "AdministrativeArea", "name": "West Midlands"}, {"@type": "Country", "name": "England"}], "founder": {"@id": "https://aurapa.co.uk/#saran"}, "memberOf": {"@type": "Organization", "name": "Commercial Finance Network Corporation Ltd", "url": "https://commercialfinancenetwork.co.uk/"}, "sameAs": ["https://linkedin.com/company/aurapa"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Person", "@id": "https://aurapa.co.uk/#saran", "name": "Saran Gandhi", "jobTitle": "Founder", "worksFor": {"@id": "https://aurapa.co.uk/#organisation"}, "description": "Founder of Aurapa Ltd. Former Indian Army colonel and former senior manager at Amazon EU, now a commercial finance broker in Coventry.", "knowsAbout": ["buy to let mortgages", "bridging finance", "HMO mortgages", "self employed mortgages", "limited company buy to let"]}</script>
+</head>
+<body>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Aurapa<small>Property Finance</small></a>
+<nav><a href="/">Home</a><a href="/guides/">Guides</a><a href="/calculators/">Calculators</a><a href="/about/">About</a><a href="/contact/">Contact</a><a class="nav-cta" href="tel:+447878781100">Call 07878 781100</a></nav>
+</div>
+</header>
+<main>
+<script>
+// Lead capture endpoint: Apps Script Web App on the leads Sheet (doPost).
+// Live since 2 Aug 2026. Leads append to Sheet2 so the existing alert,
+// calendar and WhatsApp automation fires exactly as it does for Meta leads.
+var WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzSZB_NApHuD-2w6cl-9SkDhbpC9p1Fp9ldENm2XosCY2XLu-uXBV9zKTDGCJRnTRSsVQ/exec";
+
+function submitLead(calcId) {
+  var name = document.getElementById('lf-name').value.trim();
+  var phone = document.getElementById('lf-phone').value.trim();
+  var email = document.getElementById('lf-email').value.trim();
+  var status = document.getElementById('lf-status');
+  if (name === '' || phone === '') {
+    status.textContent = 'A name and phone number are needed so we can call you back.';
+    return;
+  }
+  var payload = {
+    source: 'calculator',
+    calculator: calcId,
+    name: name,
+    phone: phone,
+    email: email,
+    inputs: window.lastInputs || {},
+    results: window.lastResults || {},
+    page: location.href,
+    submitted_at: new Date().toISOString()
+  };
+  status.textContent = 'Sending…';
+  fetch(WEBHOOK_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  }).then(function (r) {
+    status.textContent = r.ok
+      ? 'Thanks. One of our team will call you back, usually the same working day.'
+      : 'That did not send. Please call us on 07878 781100 instead.';
+  }).catch(function () {
+    status.textContent = 'That did not send. Please call us on 07878 781100 instead.';
+  });
+}
+
+function fmtGBP(n) {
+  return '£' + Math.round(n).toLocaleString('en-GB');
+}
+
+// Standard annuity payment: capital and interest over the full term.
+function annuity(p, annualPct, years) {
+  var r = (annualPct / 100) / 12;
+  var n = Math.round(years * 12);
+  if (r === 0) return n > 0 ? p / n : 0;
+  return p * r / (1 - Math.pow(1 + r, -n));
+}
+</script><section class="page-hero"><div class="wrap">
+<p class="crumb">Free calculator</p><h1>Mortgage repayment calculator</h1>
+<p class="lead">Enter the property price, your deposit, a rate and a term. The calculator shows the monthly payment on a repayment basis and on interest only, the total interest over the term, and what happens to the payment if rates rise.</p>
+</div></section><div class="wrap"><div class="prose">
+<div class="calc">
+<label for="price">Property price (£)</label>
+<input type="number" id="price" value="300000" min="0">
+<label for="deposit">Deposit (£)</label>
+<input type="number" id="deposit" value="60000" min="0">
+<label for="mrate">Interest rate (% a year)</label>
+<input type="number" id="mrate" value="4.5" step="0.05" min="0">
+<label for="term">Term (years)</label>
+<input type="number" id="term" value="25" min="1" max="40">
+<button type="button" onclick="calcMortgage()">Calculate</button>
+</div>
+
+<div class="result hidden" id="result"></div>
+
+<div class="leadform hidden" id="leadform">
+<h3>Want these numbers checked by a broker</h3>
+<p>Leave your details and one of our team will look at your figures against live lender criteria and call you back. No charge, no obligation.</p>
+<input type="text" id="lf-name" placeholder="Name" autocomplete="name">
+<input type="tel" id="lf-phone" placeholder="Phone" autocomplete="tel">
+<input type="email" id="lf-email" placeholder="Email" autocomplete="email">
+<button type="button" onclick="submitLead('mortgage-repayment')">Ask us to check these numbers</button>
+<p id="lf-status"></p>
+</div>
+
+<p class="disclaimer">Figures are illustrative only. They are not advice, not a quote and not an offer of finance. Lender criteria vary and change.</p>
+
+<h2>How the calculation works</h2>
+<p>A repayment mortgage clears the debt over the term, so each payment covers the interest for that month and a slice of the capital. Early on most of the payment is interest, which is why overpaying in the first years saves far more than overpaying near the end. An interest only mortgage pays the interest and nothing else, so the balance is still there at the end and needs a repayment plan behind it. Most buy to let mortgages are interest only, most residential mortgages are repayment.</p>
+<p>Loan to value is the loan as a share of the property value, and it is the single biggest driver of the rate you are offered. The bands lenders price at are typically 60%, 75%, 80%, 85%, 90% and 95%, so a deposit that nudges you under a band can be worth more than shopping for a better lender. If you are buying to let rather than to live in, the rental stress test decides your maximum loan too, and that is covered in our <a href="/guides/btl-stress-test-icr/">guide to how lenders stress test buy to let affordability</a>.</p>
+<p>The rate rise table is there because a fixed rate ends. When it does, the balance moves onto whatever is available then. Checking the payment two or three per cent higher is a quick way to see whether a case is comfortable or tight.</p>
+
+<script>
+function calcMortgage() {
+  var price = parseFloat(document.getElementById('price').value) || 0;
+  var deposit = parseFloat(document.getElementById('deposit').value) || 0;
+  var rate = parseFloat(document.getElementById('mrate').value) || 0;
+  var years = parseFloat(document.getElementById('term').value) || 1;
+
+  var loan = Math.max(0, price - deposit);
+  var ltv = price > 0 ? (loan / price) * 100 : 0;
+  var monthly = annuity(loan, rate, years);
+  var io = loan * (rate / 100) / 12;
+  var totalPaid = monthly * years * 12;
+  var totalInterest = totalPaid - loan;
+
+  var rows = '';
+  [0, 1, 2, 3].forEach(function (up) {
+    var m = annuity(loan, rate + up, years);
+    var diff = m - monthly;
+    rows = rows + '<tr><td>' + (rate + up).toFixed(2) + '%' + (up ? ' (+' + up + '%)' : ' (your rate)') +
+      '</td><td>' + fmtGBP(m) + '</td><td>' + (up ? '+' + fmtGBP(diff) + ' a month' : '-') + '</td></tr>';
+  });
+
+  window.lastInputs = { price: price, deposit: deposit, rate: rate, term_years: years };
+  window.lastResults = { loan: Math.round(loan), ltv: Math.round(ltv * 10) / 10,
+    monthly_repayment: Math.round(monthly), monthly_interest_only: Math.round(io),
+    total_interest: Math.round(totalInterest) };
+
+  var html = '<h2>Results</h2>'
+    + '<table>'
+    + '<tr><th>Item</th><th>Amount</th></tr>'
+    + '<tr><td>Loan needed</td><td>' + fmtGBP(loan) + '</td></tr>'
+    + '<tr><td>Loan to value</td><td>' + ltv.toFixed(1) + '%</td></tr>'
+    + '<tr><td><strong>Monthly payment, repayment basis</strong></td><td><strong>' + fmtGBP(monthly) + '</strong></td></tr>'
+    + '<tr><td>Monthly payment, interest only</td><td>' + fmtGBP(io) + '</td></tr>'
+    + '<tr><td>Total interest over ' + years + ' years</td><td>' + fmtGBP(totalInterest) + '</td></tr>'
+    + '<tr><td>Total paid over the term</td><td>' + fmtGBP(totalPaid) + '</td></tr>'
+    + '</table>'
+    + '<h3>If rates are higher when your fix ends</h3>'
+    + '<table><tr><th>Rate</th><th>Monthly payment</th><th>Difference</th></tr>' + rows + '</table>';
+
+  document.getElementById('result').innerHTML = html;
+  document.getElementById('result').classList.remove('hidden');
+  document.getElementById('leadform').classList.remove('hidden');
+}
+</script>
+</div></div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<div class="footer-grid">
+<div>
+<p class="fbrand">Aurapa</p>
+<p>Property finance for cases that do not fit the high street. Buy to let, bridging, HMO and self employed mortgages, arranged through a panel of over 100 lenders.</p>
+<p>Proud member of the Commercial Finance Network.</p>
+</div>
+<div>
+<h4>Popular guides</h4>
+<ul>
+<li><a href="/guides/ltd-company-btl/">Limited company BTL</a></li>
+<li><a href="/guides/btl-stress-test-icr/">The BTL stress test</a></li>
+<li><a href="/guides/bridging-loan-cost/">Bridging loan costs</a></li>
+<li><a href="/guides/self-employed-mortgage-one-year/">Self employed mortgages</a></li>
+<li><a href="/guides/">All 18 guides</a></li>
+</ul>
+</div>
+<div>
+<h4>Tools</h4>
+<ul>
+<li><a href="/calculators/mortgage-repayment/">Mortgage repayment calculator</a></li>
+<li><a href="/calculators/remortgage/">Remortgage calculator</a></li>
+<li><a href="/calculators/btl-affordability/">BTL affordability calculator</a></li>
+<li><a href="/calculators/bridging-cost/">Bridging cost calculator</a></li>
+<li><a href="/about/">About us</a></li>
+<li><a href="/contact/">Contact</a></li>
+<li><a href="/privacy/">Privacy</a></li>
+</ul>
+</div>
+<div>
+<h4>Talk to us</h4>
+<ul>
+<li><strong style="color:#fff">Aurapa Ltd</strong></li>
+<li>Coventry, West Midlands</li>
+<li><a href="tel:+447878781100">07878 781100</a></li>
+<li><a href="mailto:s.gandhi@cfnuk.com">s.gandhi@cfnuk.com</a></li>
+<li><a href="https://wa.me/447802649241">WhatsApp us</a></li>
+</ul>
+</div>
+</div>
+<div class="footer-bottom">
+<p class="fca">Aurapa Ltd is an Appointed Representative of Commercial Finance Network Corporation Ltd, which is authorised and regulated by the Financial Conduct Authority, FCA number 796413.</p>
+<p class="fca">Information on this site is for general guidance. It is not advice and not an offer of finance. Your property may be repossessed if you do not keep up repayments on a mortgage.</p>
+<p class="fca">&copy; 2026 Aurapa Ltd. All rights reserved.</p>
+</div>
+</div>
+</footer>
+</body>
+</html>
